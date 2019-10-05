@@ -8,7 +8,7 @@ basePath: /api
 schemes:
   - https
 paths:
-  /tasks:
+  /tasks/:
     post:
       tags:
         - tasks
@@ -159,6 +159,88 @@ paths:
             type: file
         '404':
           description: not found
+  '/tasks/simple-counter':
+    post:
+       tags:
+        - tasks
+       summary: Create a simple counter task
+       description: ''
+       operationId: createSimpleCounterTask
+       consumes:
+         - application/json
+       produces:
+        - application/json
+       parameters:
+        - in: body
+          name: body
+          description: task to create
+          required: true
+          schema:
+            $ref: '#/definitions/SimpleCounterTask'
+       responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/SimpleCounterTask'
+        '405':
+          description: Invalid input
+  '/tasks/simple-counter/{id}/execute':
+    post:
+      tags:
+        - tasks
+      summary: execute a simple counter task by id
+      description: ''
+      operationId: executeSimpleCounterTask
+      parameters:
+        - name: id
+          in: path
+          description: id of task to execute
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: successful operation
+        '404':
+          description: not found
+  '/tasks/simple-counter/{id}/status':
+    get:
+      tags:
+        - tasks
+      summary: get status of simple counter task by id
+      description: ''
+      operationId: statusOfSimpleCounterTask
+      parameters:
+        - name: id
+          in: path
+          description: id of task to execute
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: successful operation
+        '404':
+          description: not found
+  '/tasks/simple-counter/{id}':
+     delete:
+      tags:
+        - tasks
+      summary: delete a simple counter tasks by id
+      description: ''
+      operationId: deleteSimpleCounterTask
+      parameters:
+        - name: id
+          in: path
+          description: id of task to delete
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: successful operation
+        '404':
+          description: not found
 securityDefinitions:
   api_key:
     type: apiKey
@@ -178,3 +260,20 @@ definitions:
       creationDate:
         type: string
         format: date-time
+  SimpleCounterTask:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+      name:
+        type: string
+      creationDate:
+        type: string
+        format: date-time
+      beginCounter:
+        type: integer
+      endCounter:
+        type: integer
+      
+        
