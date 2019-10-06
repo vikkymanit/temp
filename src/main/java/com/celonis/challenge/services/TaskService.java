@@ -3,10 +3,12 @@ package com.celonis.challenge.services;
 import com.celonis.challenge.exceptions.InternalException;
 import com.celonis.challenge.exceptions.NotFoundException;
 import com.celonis.challenge.model.ProjectGenerationTask;
+import com.celonis.challenge.model.SimpleCounterTaskStatus;
 import com.celonis.challenge.repository.ProjectGenerationTaskRepository;
 import com.celonis.challenge.model.SimpleCounterTask;
 import com.celonis.challenge.repository.SimpleCounterTaskRepository;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -15,8 +17,10 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.springframework.data.jpa.domain.Specifications.where;
 
 @Service
 public class TaskService {
@@ -25,7 +29,7 @@ public class TaskService {
     private final SimpleCounterTaskRepository simpleCounterTaskRepository;
 
     private final FileService fileService;
-
+    private final ConcurrentHashMap<String, Thread> simpleCounterThreads;
 
     public TaskService(ProjectGenerationTaskRepository projectGenerationTaskRepository,
                        SimpleCounterTaskRepository simpleCounterTaskRepository,
@@ -33,6 +37,7 @@ public class TaskService {
         this.projectGenerationTaskRepository = projectGenerationTaskRepository;
         this.simpleCounterTaskRepository = simpleCounterTaskRepository;
         this.fileService = fileService;
+        this.simpleCounterThreads = new ConcurrentHashMap<>();
     }
 
 
@@ -99,7 +104,81 @@ public class TaskService {
     public SimpleCounterTask createSimpleCounterTask(SimpleCounterTask simpleCounterTask) {
         simpleCounterTask.setId(null);
         simpleCounterTask.setCreationDate(new Date());
+        simpleCounterTask.setStatus(SimpleCounterTaskStatus.CREATED.toString());
         return simpleCounterTaskRepository.save(simpleCounterTask);
+    }
+
+    public void executeSimpleCounterTask(String taskId) {
+        SimpleCounterTask simpleCounterTask = getSimpleCounterTask(taskId);
+
+        Thread thread = new Thread(new SimpleCounterThread(taskId,
+                simpleCounterTask.getBeginCounter(), simpleCounterTask.getEndCounter(),
+                this));
+        thread.start();
+        simpleCounterThreads.put(taskId,thread);
+    }
+
+    private SimpleCounterTask getSimpleCounterTask(String taskId) {
+        SimpleCounterTask simpleCounterTask = simpleCounterTaskRepository.findOne(taskId);
+        if (simpleCounterTask == null) {
+            throw new NotFoundException();
+        }
+        return simpleCounterTask;
+    }
+
+    public void updateSimpleCounterTaskStatus(String taskId, String status) {
+        SimpleCounterTask simpleCounterTask = getSimpleCounterTask(taskId);
+        simpleCounterTask.setStatus(status);
+        simpleCounterTaskRepository.save(simpleCounterTask);
+    }
+
+    public SimpleCounterTask getSimpleCounterTaskStatus(String taskId) {
+        return simpleCounterTaskRepository.findOne(taskId);
+    }
+
+    public void cancelSimpleCounterTask(String taskId) {
+        Thread thread = simpleCounterThreads.get(taskId);
+        thread.interrupt();
+    }
+
+    public void deleteSimpleCounterTask(String taskId) {
+        Thread thread = simpleCounterThreads.get(taskId);
+        if(thread != null) {
+            thread.interrupt();
+            while (!thread.isAlive()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        simpleCounterTaskRepository.delete(taskId);
+    }
+
+    public void updateRunningThreadsList(String taskId){
+        simpleCounterThreads.remove(taskId);
+    }
+
+    public List<SimpleCounterTask> listSimpleCounterTasks() {
+        return simpleCounterTaskRepository.findAll();
+    }
+
+    private void purgeOldUnexecutedTasks(){
+//        simpleCounterTaskRepository.findAll(
+//                where(hasStatus(SimpleCounterTaskStatus.CREATED.toString())
+//                (isOlderThan(60000))));
+    }
+
+    static Specification<SimpleCounterTask> hasStatus(String status) {
+        return (task, cq, cb) -> cb.equal(task.get("status"), status);
+    }
+
+    static Specification<SimpleCounterTask> isOlderThan(Long timeInMilliSeconds) {
+        Long currentTime = java.lang.System.currentTimeMillis();
+        Long timeToCompate = currentTime - timeInMilliSeconds;
+        Date date = new Date(timeToCompate);
+        return (task, cq, cb) -> cb.lessThan(task.get("creationDate"), date);
     }
 }
 

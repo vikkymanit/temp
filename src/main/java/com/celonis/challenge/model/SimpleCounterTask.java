@@ -23,6 +23,8 @@ public class SimpleCounterTask {
 
     private Integer endCounter;
 
+    private String status;
+
     @JsonIgnore
     private String storageLocation;
 
@@ -58,7 +60,7 @@ public class SimpleCounterTask {
         this.storageLocation = storageLocation;
     }
 
-    public long getBeginCounter() {
+    public Integer getBeginCounter() {
         return beginCounter;
     }
 
@@ -66,11 +68,19 @@ public class SimpleCounterTask {
         this.beginCounter = beginCounter;
     }
 
-    public long getEndCounter() {
+    public Integer getEndCounter() {
         return endCounter;
     }
 
     public void setEndCounter(Integer endCounter) {
         this.endCounter = endCounter;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

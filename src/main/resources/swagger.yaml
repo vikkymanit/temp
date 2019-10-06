@@ -159,29 +159,44 @@ paths:
             type: file
         '404':
           description: not found
-  '/tasks/simple-counter':
-    post:
-       tags:
+  '/tasks/simple-counter/':
+    get:
+      tags:
         - tasks
-       summary: Create a simple counter task
-       description: ''
-       operationId: createSimpleCounterTask
-       consumes:
-         - application/json
-       produces:
+      summary: list all simple counter tasks
+      description: ''
+      operationId: listSimpleCounterTasks
+      produces:
         - application/json
-       parameters:
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SimpleCounterTaskResponse'
+    post:
+      tags:
+        - tasks
+      summary: Create a simple counter task
+      description: ''
+      operationId: createSimpleCounterTask
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
         - in: body
           name: body
           description: task to create
           required: true
           schema:
-            $ref: '#/definitions/SimpleCounterTask'
-       responses:
+            $ref: '#/definitions/SimpleCounterTaskRequest'
+      responses:
         '200':
           description: successful operation
           schema:
-            $ref: '#/definitions/SimpleCounterTask'
+            $ref: '#/definitions/SimpleCounterTaskResponse'
         '405':
           description: Invalid input
   '/tasks/simple-counter/{id}/execute':
@@ -209,7 +224,7 @@ paths:
         - tasks
       summary: get status of simple counter task by id
       description: ''
-      operationId: statusOfSimpleCounterTask
+      operationId: getSimpleCounterTaskStatus
       parameters:
         - name: id
           in: path
@@ -220,10 +235,32 @@ paths:
       responses:
         '204':
           description: successful operation
+          schema:
+            $ref: '#/definitions/SimpleCounterTaskResponse'
         '404':
           description: not found
+  '/tasks/simple-counter/{id}/cancel':
+    post:
+      tags:
+        - tasks
+      summary: cancel a simple counter tasks by id
+      description: ''
+      operationId: cancelSimpleCounterTask
+      parameters:
+        - name: id
+          in: path
+          description: id of task to delete
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: successful operation
+        '404':
+          description: not found
+
   '/tasks/simple-counter/{id}':
-     delete:
+    delete:
       tags:
         - tasks
       summary: delete a simple counter tasks by id
@@ -260,7 +297,7 @@ definitions:
       creationDate:
         type: string
         format: date-time
-  SimpleCounterTask:
+  SimpleCounterTaskRequest:
     type: object
     properties:
       id:
@@ -275,5 +312,25 @@ definitions:
         type: integer
       endCounter:
         type: integer
-      
-        
+  SimpleCounterTaskResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+      name:
+        type: string
+      creationDate:
+        type: string
+        format: date-time
+      beginCounter:
+        type: integer
+      endCounter:
+        type: integer
+      status:
+        type: string
+        enum:
+          - created
+          - executing
+          - cancelled
+          - finished

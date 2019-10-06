@@ -60,9 +60,37 @@ public class TaskController {
         return taskService.getTaskResult(taskId);
     }
 
+    @GetMapping("/simple-counter/")
+    public List<SimpleCounterTask> listSimpleCounterTasks() {
+        return taskService.listSimpleCounterTasks();
+    }
+
     @PostMapping("/simple-counter/")
     public SimpleCounterTask createSimpleCounterTask(@RequestBody @Valid SimpleCounterTask simpleCounterTask) {
         return taskService.createSimpleCounterTask(simpleCounterTask);
+    }
+
+    @PostMapping("/simple-counter/{taskId}/execute")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void executeSimpleCounterTask(@PathVariable String taskId) {
+        taskService.executeSimpleCounterTask(taskId);
+    }
+
+    @GetMapping("/simple-counter/{taskId}/status")
+    public SimpleCounterTask getSimpleCounterTaskStatus(@PathVariable String taskId) {
+        return taskService.getSimpleCounterTaskStatus(taskId);
+    }
+
+    @PostMapping("/simple-counter/{taskId}/cancel")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelSimpleCounterTask(@PathVariable String taskId) {
+        taskService.cancelSimpleCounterTask(taskId);
+    }
+
+    @DeleteMapping("/simple-counter/{taskId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteSimpleCounterTask(@PathVariable String taskId) {
+        taskService.deleteSimpleCounterTask(taskId);
     }
 
 }
