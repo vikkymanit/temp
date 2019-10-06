@@ -13,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -164,21 +165,22 @@ public class TaskService {
         return simpleCounterTaskRepository.findAll();
     }
 
+    @Scheduled(cron ="0 */1 * * * *")
     private void purgeOldUnexecutedTasks(){
-//        simpleCounterTaskRepository.findAll(
-//                where(hasStatus(SimpleCounterTaskStatus.CREATED.toString())
-//                (isOlderThan(60000))));
+        List<SimpleCounterTask> simpleCounterTasks = simpleCounterTaskRepository.findAll
+                (where(hasStatus(SimpleCounterTaskStatus.CREATED.toString())).and(isOlderThan(60000L)));
+        simpleCounterTaskRepository.delete(simpleCounterTasks);
     }
 
     static Specification<SimpleCounterTask> hasStatus(String status) {
-        return (task, cq, cb) -> cb.equal(task.get("status"), status);
+        return (task, criteriaQuery, criteriaBuilder) -> criteriaBuilder.equal(task.get("status"), status);
     }
 
     static Specification<SimpleCounterTask> isOlderThan(Long timeInMilliSeconds) {
         Long currentTime = java.lang.System.currentTimeMillis();
         Long timeToCompate = currentTime - timeInMilliSeconds;
         Date date = new Date(timeToCompate);
-        return (task, cq, cb) -> cb.lessThan(task.get("creationDate"), date);
+        return (task, criteriaQuery, criteriaBuilder) -> criteriaBuilder.lessThan(task.get("creationDate"), date);
     }
 }
 
